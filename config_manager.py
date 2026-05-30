@@ -71,7 +71,11 @@ class ConfigManager:
 
         target_apps = raw.get("target_apps", DEFAULT_CONFIG["target_apps"])
         if not isinstance(target_apps, list) or not target_apps:
-            raise ValueError("Configuration 'target_apps' must be a non-empty list.")
+            length_display = len(target_apps) if isinstance(target_apps, list) else "N/A"
+            raise ValueError(
+                "Configuration 'target_apps' must be a non-empty list, "
+                f"got type={type(target_apps).__name__}, length={length_display}."
+            )
 
         return AppConfig(
             codex_window_keywords=list(merged["codex_window_keywords"]),

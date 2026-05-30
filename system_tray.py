@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 try:
     import pystray
     from PIL import Image
-except Exception:  # pylint: disable=broad-except
+except (ImportError, ValueError):
     pystray = None
     Image = None
 

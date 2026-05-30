@@ -3,7 +3,7 @@
     "Codex",
     "codex"
   ],
-  "_comment_target_apps": "# TARGET_APP_CONFIG 在这里修改目标软件列表",
+  "_note_target_apps": "# TARGET_APP_CONFIG 在这里修改目标软件列表",
   "target_apps": [
     {
       "name": "Browser",

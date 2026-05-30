@@ -49,16 +49,27 @@ def main() -> int:
 
     stop_event = threading.Event()
 
-    # TARGET_APP_CONFIG: Choose target app name from config.json target_apps list.
-    primary_target = config.target_apps[0].get("window_keyword", "")
+    # TARGET_APP_CONFIG: Target app order comes from config.json "target_apps".
+    target_keywords = [
+        app.get("window_keyword", "").strip()
+        for app in config.target_apps
+        if app.get("window_keyword", "").strip()
+    ]
 
     def handle_event(event: AIEvent) -> None:
         if event == AIEvent.REQUEST_STARTED:
             manager.save_codex_window()
-            if primary_target:
-                manager.switch_to_target(primary_target)
-            else:
+            if not target_keywords:
                 logger.warning("No target app configured; skipping switch.")
+                return
+
+            switched = False
+            for keyword in target_keywords:
+                if manager.switch_to_target(keyword):
+                    switched = True
+                    break
+            if not switched:
+                logger.warning("No configured target window could be activated.")
             return
 
         if event in {

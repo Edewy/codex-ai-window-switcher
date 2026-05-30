@@ -1,6 +1,12 @@
-# Codex AI 自动窗口切换工具
+# Codex AI Auto Window Switcher / Codex AI 自动窗口切换工具
+
+An automatic window switcher for Codex: switches to a target app while AI is generating, then switches back to Codex when user attention is required.
 
 一个用于 Codex 的自动窗口切换工具：当 AI 开始生成时自动切到目标应用，遇到需要用户处理的事件时自动切回 Codex。
+
+## English Summary
+
+This project automatically switches from Codex to a target app while AI is generating, then switches back to Codex when generation finishes, user review is needed, permission is requested, an API error occurs, or a hotkey is pressed.
 
 ## 功能
 
