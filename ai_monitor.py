@@ -105,6 +105,16 @@ class AIMonitor:
         for callback in list(self._callbacks):
             callback(event)
 
+    @property
+    def running(self) -> bool:
+        """Whether monitoring is currently active."""
+        return self._running
+
+    @property
+    def last_status(self) -> Optional[str]:
+        """Most recently observed status value."""
+        return self._last_status
+
     def simulate_events(self, events: Iterable[AIEvent]) -> None:
         """Helper method for local manual verification."""
         for event in events:

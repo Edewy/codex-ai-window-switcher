@@ -1,4 +1,4 @@
-"""Codex AI auto window switcher entry point."""
+"""Multi-session AI auto window switcher entry point."""
 
 from __future__ import annotations
 
@@ -10,10 +10,10 @@ import threading
 import time
 from pathlib import Path
 
-from ai_monitor import AIEvent, AIMonitor
+from ai_monitor import AIEvent
 from config_manager import ConfigManager
+from session_manager import SessionManager
 from system_tray import SystemTrayUI
-from window_manager import WindowManager
 
 try:
     import keyboard
@@ -31,7 +31,7 @@ def configure_logging() -> None:
 
 def main() -> int:
     """Application bootstrap and event loop."""
-    parser = argparse.ArgumentParser(description="Codex AI automatic window switcher")
+    parser = argparse.ArgumentParser(description="AI automatic window switcher")
     parser.add_argument("--config", default="config.json", help="Path to config file")
     args = parser.parse_args()
 
@@ -39,55 +39,33 @@ def main() -> int:
     logger = logging.getLogger("main")
 
     config = ConfigManager(Path(args.config)).load()
-    manager = WindowManager(config.codex_window_keywords)
-    monitor = AIMonitor(
-        api_endpoints=config.api_endpoints,
-        poll_interval_seconds=config.poll_interval_seconds,
-        request_timeout_seconds=config.request_timeout_seconds,
-    )
-    tray = SystemTrayUI(title="Codex Auto Switcher")
+    session_manager = SessionManager(config)
+    tray = SystemTrayUI(title="AI Auto Switcher")
 
     stop_event = threading.Event()
-
-    # TARGET_APP_CONFIG: Target app order comes from config.json "target_apps".
-    target_keywords = [
-        app.get("window_keyword", "").strip()
-        for app in config.target_apps
-        if app.get("window_keyword", "").strip()
-    ]
-
-    def handle_event(event: AIEvent) -> None:
-        if event == AIEvent.REQUEST_STARTED:
-            manager.save_codex_window()
-            if not target_keywords:
-                logger.warning("No target app configured; skipping switch.")
-                return
-
-            switched = False
-            for keyword in target_keywords:
-                if manager.switch_to_target(keyword):
-                    switched = True
-                    break
-            if not switched:
-                logger.warning("No configured target window could be activated.")
-            return
-
-        if event in {
-            AIEvent.RESPONSE_COMPLETED,
-            AIEvent.USER_REVIEW_REQUIRED,
-            AIEvent.PERMISSION_REQUIRED,
-            AIEvent.ERROR,
-        }:
-            manager.restore_codex_window()
 
     def stop_handler(*_) -> None:
         stop_event.set()
 
-    monitor.on_event(handle_event)
+    def handle_session_event(session, event: AIEvent) -> None:
+        logger.info("Session event %s: %s", session.name, event.value)
+        tray.update_sessions_status(session_manager.status_by_session())
+
+    session_manager.on_event(handle_session_event)
 
     if keyboard:
         logger.info("Registering hotkey: %s", config.hotkey)
-        keyboard.add_hotkey(config.hotkey, lambda: manager.restore_codex_window())
+        keyboard.add_hotkey(config.hotkey, session_manager.restore_all_windows)
+        enabled_session_names = [session.name for session in config.sessions if session.enabled]
+        for idx, session_name in enumerate(enabled_session_names, start=1):
+            if idx > 9:
+                break
+            session_hotkey = f"ctrl+alt+{idx}"
+            logger.info("Registering session hotkey %s -> %s", session_hotkey, session_name)
+            keyboard.add_hotkey(
+                session_hotkey,
+                lambda name=session_name: session_manager.restore_session_window(name),
+            )
     else:
         logger.warning("keyboard package unavailable; hotkey disabled.")
 
@@ -95,18 +73,19 @@ def main() -> int:
     signal.signal(signal.SIGTERM, stop_handler)
 
     tray.start()
-    monitor.start()
-    logger.info("Codex auto switcher started.")
+    session_manager.start_all()
+    tray.update_sessions_status(session_manager.status_by_session())
+    logger.info("AI auto switcher started. Active sessions: %s", session_manager.active_session_names())
 
     try:
         while not stop_event.is_set():
             time.sleep(0.2)
     finally:
-        monitor.stop()
+        session_manager.stop_all()
         tray.stop()
         if keyboard:
             keyboard.unhook_all_hotkeys()
-        logger.info("Codex auto switcher stopped.")
+        logger.info("AI auto switcher stopped.")
 
     return 0
 
