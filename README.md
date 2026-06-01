@@ -1,24 +1,26 @@
-# Codex AI Auto Window Switcher / Codex AI 自动窗口切换工具
+# AI Auto Window Switcher / AI 自动窗口切换工具
 
-An automatic window switcher for Codex: switches to a target app while AI is generating, then switches back to Codex when user attention is required.
+An automatic window switcher for multiple AI assistants: switches to a target app while AI is generating, then switches back to the corresponding AI window when user attention is required.
 
-一个用于 Codex 的自动窗口切换工具：当 AI 开始生成时自动切到目标应用，遇到需要用户处理的事件时自动切回 Codex。
+一个支持多个 AI 会话（如 Claude、Codex）的自动窗口切换工具：当 AI 开始生成时自动切到目标应用，遇到需要用户处理的事件时自动切回对应 AI 窗口。
 
 ## English Summary
 
-This project automatically switches from Codex to a target app while AI is generating, then switches back to Codex when generation finishes, user review is needed, permission is requested, an API error occurs, or a hotkey is pressed.
+This project supports multiple concurrent sessions and automatically switches from each AI window to a configured target app while that AI is generating, then switches back when generation finishes, user review is needed, permission is requested, an API error occurs, or a hotkey is pressed.
 
 ## 功能
 
 - 监听 AI 请求状态（开始/完成）
 - 监听用户审核、权限请求、错误事件
-- 触发事件后自动切回 Codex
-- 快捷键手动切回（默认 `Ctrl+Alt+C`）
-- 支持多个目标应用配置
+- 触发事件后自动切回对应 AI 窗口
+- 快捷键手动切回（全局默认 `Ctrl+Alt+C`，会话快捷键 `Ctrl+Alt+1..9`）
+- 支持多个会话、每个会话独立目标应用配置
 
 ## 文件结构
 
-- `main.py`：主程序入口和事件循环
+- `main.py`：主程序入口和多会话事件循环
+- `ai_session.py`：单个会话的监控+窗口处理
+- `session_manager.py`：多个会话生命周期管理
 - `window_manager.py`：窗口查找、切换、恢复
 - `ai_monitor.py`：AI 状态轮询与事件分发
 - `config_manager.py`：配置加载与管理
@@ -42,22 +44,30 @@ python main.py --config config.json
 
 ## 配置说明
 
-以下位置可修改目标软件，均已使用 `# TARGET_APP_CONFIG` 标记：
+`config.json` 使用 `sessions` 数组配置多个 AI 会话，每个会话可独立设置窗口关键词、API 端点和目标应用。
 
-- `config.json` 中 `target_apps`
-- `config_manager.py` 中 `DEFAULT_CONFIG["target_apps"]`
-- `main.py` 中目标应用选择逻辑
-
-示例：
+示例（单会话旧格式仍兼容）：
 
 ```json
-"target_apps": [
-  {"name": "Browser", "window_keyword": "Chrome"},
-  {"name": "IDE", "window_keyword": "Code"}
-]
+{
+  "sessions": [
+    {
+      "name": "Claude",
+      "enabled": true,
+      "ai_window_keywords": ["Claude"],
+      "api_endpoints": {
+        "status": "http://127.0.0.1:8765/claude/status",
+        "events": "http://127.0.0.1:8765/claude/events"
+      },
+      "target_apps": [
+        {"name": "Browser", "window_keyword": "Chrome"}
+      ]
+    }
+  ]
+}
 ```
 
-## 事件触发回到 Codex
+## 事件触发回到 AI 窗口
 
 - AI 响应生成完毕
 - 需要用户确认/审核代码

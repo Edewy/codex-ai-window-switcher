@@ -34,3 +34,15 @@ class SystemTrayUI:
         """Stop tray icon if running."""
         if self._icon:
             self._icon.stop()
+
+    def update_sessions_status(self, status_by_session: dict) -> None:
+        """Update tray tooltip with multi-session status."""
+        if not status_by_session:
+            tooltip = self.title
+        else:
+            summary = " | ".join(
+                f"{name}:{status}" for name, status in sorted(status_by_session.items())
+            )
+            tooltip = f"{self.title} - {summary}"
+        if self._icon:
+            self._icon.title = tooltip

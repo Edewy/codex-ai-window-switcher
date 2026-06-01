@@ -1,23 +1,31 @@
 {
-  "codex_window_keywords": [
-    "Codex",
-    "codex"
-  ],
-  "_note_target_apps": "# TARGET_APP_CONFIG 在这里修改目标软件列表",
-  "target_apps": [
+  "sessions": [
     {
-      "name": "Browser",
-      "window_keyword": "Chrome"
+      "name": "Claude",
+      "enabled": true,
+      "ai_window_keywords": ["Claude"],
+      "api_endpoints": {
+        "status": "http://127.0.0.1:8765/claude/status",
+        "events": "http://127.0.0.1:8765/claude/events"
+      },
+      "target_apps": [
+        {"name": "Browser", "window_keyword": "Chrome"},
+        {"name": "IDE", "window_keyword": "Code"}
+      ]
     },
     {
-      "name": "IDE",
-      "window_keyword": "Code"
+      "name": "Codex",
+      "enabled": true,
+      "ai_window_keywords": ["Codex"],
+      "api_endpoints": {
+        "status": "http://127.0.0.1:8766/status",
+        "events": "http://127.0.0.1:8766/events"
+      },
+      "target_apps": [
+        {"name": "Browser", "window_keyword": "Chrome"}
+      ]
     }
   ],
-  "api_endpoints": {
-    "status": "http://127.0.0.1:8765/status",
-    "events": "http://127.0.0.1:8765/events"
-  },
   "poll_interval_seconds": 1.0,
   "request_timeout_seconds": 3.0,
   "hotkey": "ctrl+alt+c"
